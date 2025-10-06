@@ -65,18 +65,6 @@ services:
     networks:
       - ogna
 
-  certbot:
-    image: certbot/certbot:latest
-    container_name: certbot
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-webroot:/var/www/certbot
-    # Run certbot in standalone mode initially, then use webroot for renewals
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    depends_on:
-      - kong
-
   deck-sync:
     image: kong/deck:latest
     depends_on:
