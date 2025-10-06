@@ -1,0 +1,3 @@
+[submodule "ogna"]
+	path = ogna
+	url = https://github.com/ognastack/core.git
