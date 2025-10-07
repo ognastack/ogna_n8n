@@ -25,3 +25,4 @@ temp/
 migrations/
 config/
 core/
+.env
