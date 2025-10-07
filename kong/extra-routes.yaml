@@ -1,0 +1,8 @@
+services:
+  # n8n
+  - name: n8n-service
+    url: http://n8n:5678
+    routes:
+      - name: n8n-route
+        paths:
+          - /

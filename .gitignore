@@ -1,6 +1,28 @@
-composer.phar
-/vendor/
+# Docker-related files
+.env # Often contains sensitive environment variables
+docker-compose.override.yml # If you use an override file for local development that shouldn't be committed
 
-# Commit your application's lock file https://getcomposer.org/doc/01-basic-usage.md#commit-your-composer-lock-file-to-version-control
-# You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
-# composer.lock
+# Dependencies and build artifacts
+node_modules/ # For Node.js projects
+vendor/ # For PHP projects (e.g., Composer dependencies)
+target/ # For Java/Maven projects
+dist/ # Common directory for build output
+build/ # Another common directory for build output
+
+# IDE and OS-specific files
+.idea/ # IntelliJ IDEA project files
+.vscode/ # VS Code settings
+.DS_Store # macOS specific
+Thumbs.db # Windows specific
+tests/.idea
+tests/venv
+
+# Logs and temporary files
+*.log
+*.tmp
+temp/
+
+migrations/
+config/
+core/
+.env

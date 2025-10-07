@@ -1,0 +1,108 @@
+include:
+  - ogna/docker-compose.yaml
+
+volumes:
+  n8n_storage:
+  redis_storage:
+  mongodb_data:
+  certbot-webroot:
+
+x-shared: &shared
+  restart: always
+  image: docker.n8n.io/n8nio/n8n
+  environment:
+    - DB_TYPE=postgresdb
+    - DB_POSTGRESDB_HOST=ogna-database
+    - DB_POSTGRESDB_PORT=5432
+    - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+    - DB_POSTGRESDB_USER=${POSTGRES_NON_ROOT_USER}
+    - DB_POSTGRESDB_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
+    - EXECUTIONS_MODE=queue
+    - QUEUE_BULL_REDIS_HOST=redis
+    - QUEUE_HEALTH_CHECK_ACTIVE=true
+    - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    - N8N_PROXY_HOPS=1
+  links:
+    - ogna-database
+    - redis
+  volumes:
+    - n8n_storage:/home/node/.n8n
+  depends_on:
+    redis:
+      condition: service_healthy
+    ogna-database:
+      condition: service_healthy
+  env_file:
+    - .env
+  networks:
+    - ogna
+
+services:
+  redis:
+    image: redis:6-alpine
+    restart: always
+    volumes:
+      - redis_storage:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ogna
+
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    environment:
+      MONGODB_INITDB_DATABASE: news
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    env_file:
+      - .env
+    networks:
+      - ogna
+
+  deck-sync:
+    image: kong/deck:latest
+    depends_on:
+      kong-cp:
+        condition: service_healthy
+    volumes:
+      - ./kong:/kong-extra
+      - ./ogna/config:/kong-base
+    command:
+      [
+        "gateway",
+        "sync",
+        "--kong-addr",
+        "http://kong-cp:8001",
+        "/kong-base/kong.yaml",
+        "/kong-extra/extra-routes.yaml",
+      ]
+    networks:
+      - ogna
+
+  api:
+    build:
+      context: ./api
+    container_name: fastapi-news
+    expose:
+      - "8000"
+    env_file:
+      - .env
+    networks:
+      - ogna
+
+  n8n:
+    <<: *shared
+    expose:
+      - "5678"
+
+  n8n-worker:
+    <<: *shared
+    command: worker
+    depends_on:
+      - n8n
